@@ -102,22 +102,78 @@ object List: // `List` companion object. Contains functions for creating and wor
   def reverse[A](l: List[A]): List[A] =
     foldLeft(l, Nil: List[A], (acc, a) => Cons(a, acc))
 
-  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = ???
+  def foldRightViaFoldLeft[A,B](l: List[A], acc: B, f: (A, B) => B): B =
+    foldLeft(reverse(l), acc, (b,a) => f(a,b))
 
-  def concat[A](l: List[List[A]]): List[A] = ???
+  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] =
+    foldRight(l, r, Cons(_, _))
 
-  def incrementEach(l: List[Int]): List[Int] = ???
+  def concat[A](l: List[List[A]]): List[A] =
+    foldRight(l, Nil: List[A], foldRight(_, _, Cons(_, _)))
 
-  def doubleToString(l: List[Double]): List[String] = ???
+  def incrementEach(l: List[Int]): List[Int] =
+    foldRight(l, Nil: List[Int], (a, acc) => Cons(a+1, acc))
 
-  def map[A,B](l: List[A])(f: A => B): List[B] = ???
+  def doubleToString(l: List[Double]): List[String] =
+    foldRight(l, Nil: List[String], (a, acc) => Cons(a.toString, acc))
 
-  def filter[A](as: List[A])(f: A => Boolean): List[A] = ???
+  def map[A,B](l: List[A])(f: A => B): List[B] =
+    foldRight(l, Nil: List[B], (a, acc) => Cons(f(a), acc))
 
-  def flatMap[A,B](as: List[A])(f: A => List[B]): List[B] = ???
+  def filter[A](as: List[A])(f: A => Boolean): List[A] =
+    foldRight(
+      as,
+      Nil: List[A],
+      (a, acc) => if f(a)
+        then Cons(a, acc)
+        else acc
+    )
 
-  def addPairwise(a: List[Int], b: List[Int]): List[Int] = ???
+  def flatMap[A,B](as: List[A])(f: A => List[B]): List[B] =
+    concat(map(as)(f))
+
+  def filterViaFlatMap[A](as: List[A])(f: A => Boolean): List[A] =
+    flatMap(as)(a => if f(a) then Cons(a, Nil) else Nil)
+
+  def addPairwise(a: List[Int], b: List[Int]): List[Int] =
+    @tailrec
+    def go(xs: List[Int], ys: List[Int], acc: List[Int]): List[Int] = (xs, ys) match
+      case (Nil, Nil) => acc
+      case (_, Nil) => acc
+      case (Nil, _) => acc
+      case (Cons(x, xs), Cons(y, ys)) => go(xs, ys, Cons(x + y, acc))
+
+    reverse(go(a, b, Nil))
+
+//    foldLeft(
+//      a,
+//      (Nil: List[Int], b),
+//      (acc: (List[Int], List[Int]), x: Int) => acc._2 match
+//        case Nil => (acc._1, Nil)
+//        case Cons(y, ys) => (Cons(x+y, acc._1), ys)
+//    )._1
+
 
   // def zipWith - TODO determine signature
+  def zipWith[A,B](a: List[A], b: List[A], f: (A,A) => B): List[B] =
+    @tailrec
+    def go(xs: List[A], ys: List[A], acc: List[B]): List[B] = (xs, ys) match
+      case (Nil, Nil) => acc
+      case (_, Nil) => acc
+      case (Nil, _) => acc
+      case (Cons(x, xs), Cons(y, ys)) => go(xs, ys, Cons(f(x,y), acc))
 
-  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = ???
+    reverse(go(a, b, Nil))
+
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean =
+    if sub == Nil then return true
+    
+    def subsequenceHere[A](sup: List[A], sub: List[A]): Boolean =
+      val zipped: List[(A,A)] = zipWith(sup, sub, (a,b) => (a,b))
+      length(filter(zipped)((t: (A, A)) => t._1 == t._2)) == length(zipped)
+
+    sup match
+      case Nil => false
+      case _ => if subsequenceHere(sup, sub)
+        then true
+        else hasSubsequence(tail(sup), sub)
