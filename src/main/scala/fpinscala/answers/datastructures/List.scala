@@ -27,7 +27,7 @@ object List: // `List` companion object. Contains functions for creating and wor
   val result = List(1,2,3,4,5) match
     case Cons(x, Cons(2, Cons(4, _))) => x
     case Nil => 42
-    case Cons(x, Cons(y, Cons(3, Cons(4, _)))) => x + y
+    case Cons(x, Cons(y, Cons(3, Cons(4, _)))) => x + y // this one
     case Cons(h, t) => h + sum(t)
     case _ => 101
 
@@ -277,7 +277,7 @@ object List: // `List` companion object. Contains functions for creating and wor
     case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2, f))
 
   /*
-  Tail recursive implementation of `zipWith`. 
+  Tail recursive implementation of `zipWith`.
   */
   def zipWith_1[A, B,C](a: List[A], b: List[B], f: (A, B) => C): List[C] =
     @annotation.tailrec
@@ -298,10 +298,10 @@ object List: // `List` companion object. Contains functions for creating and wor
   loops early. In Chapter 5 we'll discuss ways of composing functions
   like this from simpler components, without giving up the efficiency
   of having the resulting functions work in one pass over the data.
-  
+
   It's good to specify some properties about these functions.
   For example, do you expect these expressions to be true?
-  
+
   (xs append ys) startsWith xs
   xs startsWith Nil
   (xs append ys append zs) hasSubsequence ys

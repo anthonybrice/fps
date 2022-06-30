@@ -1,5 +1,7 @@
 package fpinscala.exercises.datastructures
 
+import scala.annotation.tailrec
+
 /** `List` data type, parameterized on a type, `A`. */
 enum List[+A]:
   /** A `List` data constructor representing the empty list. */
@@ -14,7 +16,7 @@ object List: // `List` companion object. Contains functions for creating and wor
     case Nil => 0 // The sum of the empty list is 0.
     case Cons(x,xs) => x + sum(xs) // The sum of a list starting with `x` is `x` plus the sum of the rest of the list.
 
-  def product(doubles: List[Double]): Double = doubles match
+  def product(ds: List[Double]): Double = ds match
     case Nil => 1.0
     case Cons(0.0, _) => 0.0
     case Cons(x,xs) => x * product(xs)
@@ -24,10 +26,10 @@ object List: // `List` companion object. Contains functions for creating and wor
     else Cons(as.head, apply(as.tail*))
 
   @annotation.nowarn // Scala gives a hint here via a warning, so let's disable that
-  val result = List(1,2,3,4,5) match
+  val x = List(1,2,3,4,5) match
     case Cons(x, Cons(2, Cons(4, _))) => x
     case Nil => 42
-    case Cons(x, Cons(y, Cons(3, Cons(4, _)))) => x + y
+    case Cons(x, Cons(y, Cons(3, Cons(4, _)))) => x + y // this one
     case Cons(h, t) => h + sum(t)
     case _ => 101
 
@@ -36,38 +38,69 @@ object List: // `List` companion object. Contains functions for creating and wor
       case Nil => a2
       case Cons(h,t) => Cons(h, append(t, a2))
 
+  // No, foldRight cannot short circuit. One could write the given op such that
+  // it is a noop after 0.0 is encountered, but foldRight must still traverse
+  // the entire list applying the op.
   def foldRight[A,B](as: List[A], acc: B, f: (A, B) => B): B = // Utility functions
     as match
       case Nil => acc
       case Cons(x, xs) => f(x, foldRight(xs, acc, f))
 
-  def sumViaFoldRight(ns: List[Int]): Int =
+  def sumViaFoldRight(ns: List[Int]) =
     foldRight(ns, 0, (x,y) => x + y)
 
-  def productViaFoldRight(ns: List[Double]): Double =
+  def productViaFoldRight(ns: List[Double]) =
     foldRight(ns, 1.0, _ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
-  def tail[A](l: List[A]): List[A] = ???
+  def tail[A](l: List[A]): List[A] = l match
+    case Nil => sys.error("Empty list")
+    case Cons(_, ls) => ls
 
-  def setHead[A](l: List[A], h: A): List[A] = ???
+  def setHead[A](l: List[A], h: A): List[A] = l match
+    case Nil => sys.error("Empty list")
+    case _ => Cons(h, tail(l))
 
-  def drop[A](l: List[A], n: Int): List[A] = ???
+  def drop[A](l: List[A], n: Int): List[A] =
+    if n < 0 then return l
+    @tailrec
+    def go(m: Int, acc: List[A]): List[A] = acc match
+      case Nil => Nil
+      case _ =>
+        if n == m then acc
+        else go(m + 1, tail(acc))
 
-  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = ???
+    go(0, l)
 
-  def init[A](l: List[A]): List[A] = ???
+  @tailrec
+  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = l match
+    case Nil => Nil
+    case Cons(a, as) => if f(a) then dropWhile(as, f) else l
 
-  def length[A](l: List[A]): Int = ???
+  def init[A](l: List[A]): List[A] =
+    @tailrec
+    def go(bs: List[A], acc: List[A]): List[A] = bs match
+      case Nil => sys.error("empty list")
+      case Cons(_, Nil) => acc
+      case Cons(b, bss) => go(bss, append(acc, Cons(b, Nil)))
 
-  def foldLeft[A,B](l: List[A], acc: B, f: (B, A) => B): B = ???
+    go(l, Nil)
 
-  def sumViaFoldLeft(ns: List[Int]): Int = ???
+  def length[A](l: List[A]): Int =
+    foldRight(l, 0, (_, acc) => acc + 1)
 
-  def productViaFoldLeft(ns: List[Double]): Double = ???
+  @tailrec
+  def foldLeft[A,B](l: List[A], acc: B, f: (B, A) => B): B = l match
+    case Nil => acc
+    case Cons(a, as) => foldLeft(as, f(acc, a), f)
 
-  def lengthViaFoldLeft[A](l: List[A]): Int = ???
+  def sumViaFoldLeft(ns: List[Int]): Int = foldLeft(ns, 0, (_: Int) + (_: Int))
 
-  def reverse[A](l: List[A]): List[A] = ???
+  def productViaFoldLeft(ns: List[Double]): Double = foldLeft(ns, 1, (_: Double) * (_: Double))
+
+  def lengthViaFoldLeft[A](l: List[A]): Int = foldLeft(l, 0, (acc, _) => acc + 1)
+
+  def reverse[A](l: List[A]): List[A] =
+    foldLeft(l, Nil: List[A], (acc, a) => Cons(a, acc))
 
   def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = ???
 
@@ -77,13 +110,11 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   def doubleToString(l: List[Double]): List[String] = ???
 
-  def map[A,B](l: List[A], f: A => B): List[B] = ???
+  def map[A,B](l: List[A])(f: A => B): List[B] = ???
 
-  def filter[A](as: List[A], f: A => Boolean): List[A] = ???
+  def filter[A](as: List[A])(f: A => Boolean): List[A] = ???
 
-  def flatMap[A,B](as: List[A], f: A => List[B]): List[B] = ???
-
-  def filterViaFlatMap[A](as: List[A], f: A => Boolean): List[A] = ???
+  def flatMap[A,B](as: List[A])(f: A => List[B]): List[B] = ???
 
   def addPairwise(a: List[Int], b: List[Int]): List[Int] = ???
 
