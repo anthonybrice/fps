@@ -138,7 +138,6 @@ object List: // `List` companion object. Contains functions for creating and wor
   def addPairwise(a: List[Int], b: List[Int]): List[Int] =
     @tailrec
     def go(xs: List[Int], ys: List[Int], acc: List[Int]): List[Int] = (xs, ys) match
-      case (Nil, Nil) => acc
       case (_, Nil) => acc
       case (Nil, _) => acc
       case (Cons(x, xs), Cons(y, ys)) => go(xs, ys, Cons(x + y, acc))
@@ -158,7 +157,6 @@ object List: // `List` companion object. Contains functions for creating and wor
   def zipWith[A,B](a: List[A], b: List[A], f: (A,A) => B): List[B] =
     @tailrec
     def go(xs: List[A], ys: List[A], acc: List[B]): List[B] = (xs, ys) match
-      case (Nil, Nil) => acc
       case (_, Nil) => acc
       case (Nil, _) => acc
       case (Cons(x, xs), Cons(y, ys)) => go(xs, ys, Cons(f(x,y), acc))
@@ -167,7 +165,7 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean =
     if sub == Nil then return true
-    
+
     def subsequenceHere[A](sup: List[A], sub: List[A]): Boolean =
       val zipped: List[(A,A)] = zipWith(sup, sub, (a,b) => (a,b))
       length(filter(zipped)((t: (A, A)) => t._1 == t._2)) == length(zipped)
