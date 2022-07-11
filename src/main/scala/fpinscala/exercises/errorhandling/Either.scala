@@ -29,9 +29,7 @@ enum Either[+E,+A]:
 object Either:
   def traverse[E,A,B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]] =
     es.foldRight(Right(Nil): Either[E, List[B]]) { (e, acc) =>
-      for
-        bs <- acc
-        b <- f(e)
+      for bs <- acc; b <- f(e)
       yield b :: bs
     }
 
