@@ -46,7 +46,7 @@ class StateSuite extends PropSuite:
     assertEquals(s, list.drop(2))
   }
 
-  /*
+
   test("State.flatMap")(genStringList) { list =>
     val (b, s) = stateA.flatMap(a => unit(length(a))).run(list)
     val expectedB = length(list.headOption)
@@ -62,7 +62,7 @@ class StateSuite extends PropSuite:
     assertEquals(firstHalfElements, first.map(Some(_)))
     assertEquals(restElements, rest)
   }
-  */
+
 
   private def length(maybeHead: Option[String]): Int =
     maybeHead.getOrElse("").length

@@ -98,7 +98,7 @@ object RNG:
   def map2ViaFlatMap[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
     flatMap(ra) { x => map(rb) { y => f(x, y) } }
 
-opaque type State[S, +A] = S => (A, S)
+type State[S, +A] = S => (A, S)
 
 object State:
   extension [S, A](underlying: State[S, A])
@@ -110,12 +110,25 @@ object State:
         (f(a), s2)
 
     def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
-      ???
+      s =>
+        val a -> s2 = run(s)
+        val b -> s3 = sb(s2)
+        f(a, b) -> s3
 
     def flatMap[B](f: A => State[S, B]): State[S, B] =
-      ???
+      s =>
+        val a -> s2 = run(s)
+        f(a)(s2)
 
   def apply[S, A](f: S => (A, S)): State[S, A] = f
+
+  def unit[S, A](a: A): State[S, A] =
+    s => a -> s
+
+  def sequence[S, A](ss: List[State[S, A]]): State[S, List[A]] =
+    ss.foldRight(unit[S, List[A]](Nil)) { (f, acc) => f.map2(acc)(_ :: _) }
+
+  def get[S]: State[S, S] = s => (s, s)
 
 enum Input:
   case Coin, Turn
@@ -123,4 +136,14 @@ enum Input:
 case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object Candy:
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] =
+    s =>
+      val (_, lastState @ Machine(_, ca, co)) = State.sequence(inputs.map(_simulateMachine))(s)
+      (co, ca) -> lastState
+
+  def _simulateMachine(i: Input): State[Machine, (Int, Int)] =
+    s => s match
+      case s2 @ Machine(_, 0, co) => (co, 0) -> s2
+      case Machine(true, ca, co) if i == Input.Coin => (co + 1, ca) -> Machine(false, ca, co + 1)
+      case Machine(false, ca, co) if i == Input.Turn => (co, ca - 1) -> Machine(true, ca - 1, co)
+      case s2 @ Machine(_, ca, co) => (co, ca) -> s2
