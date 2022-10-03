@@ -54,9 +54,13 @@ object Option:
       a <- a
       b <- b
     yield f(a,b)
+//    a.flatMap(a => b.flatMap(b => Some(f(a,b))))
 
   def sequence[A](as: List[Option[A]]): Option[List[A]] =
     traverse(as) { a => a }
+//    as.foldRight(Some(Nil): Option[List[A]]) { (a ,acc) =>
+//      a.flatMap(a => acc.map(as => a :: as))
+//    }
 
   def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
     as.foldRight(Some(Nil): Option[List[B]]) { (a, acc) =>

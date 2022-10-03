@@ -41,7 +41,7 @@ enum LazyList[+A]:
     foldRight(true)((a, b) => p(a) && b)
 
   def headOption: Option[A] =
-    foldRight(None: Option[A])((a, _) => Some(a))
+    foldRight(None: Option[A])((a, _) => Option(a))
 
   // 5.7 map, filter, append, flatmap using foldRight. Part of the exercise is
   // writing your own function signatures.
@@ -59,7 +59,7 @@ enum LazyList[+A]:
     foldRight(empty: LazyList[B])((a, acc) => f(a).foldRight(acc)((b, acc2) => cons(b, acc2)))
 
   def startsWith[B >: A](s: LazyList[B]): Boolean =
-    this.zipAll(s).forAll {
+    zipAll(s).forAll {
       case (None, None) => true
       case (Some(_), None) => true
       case (None, Some(_)) => false
@@ -93,19 +93,19 @@ enum LazyList[+A]:
 
   def zipAll[B](that: LazyList[B]): LazyList[(Option[A], Option[B])] =
     unfold(this, that) {
-      case (Cons(x, xs), Cons(y, ys)) => Some((Some(x()), Some(y())), (xs(), ys()))
-      case (Cons(x, xs), Empty) => Some((Some(x()), None), (xs(), empty))
-      case (Empty, Cons(y, ys)) => Some((None, Some(y())), (empty, ys()))
+      case (Cons(x, xs), Cons(y, ys)) => Option((Option(x()), Option(y())), (xs(), ys()))
+      case (Cons(x, xs), Empty) => Option((Option(x()), None), (xs(), empty))
+      case (Empty, Cons(y, ys)) => Option((None, Option(y())), (empty, ys()))
       case _ => None
     }
 
   def tails: LazyList[LazyList[A]] =
     unfold(this) {
-      case Cons(x, xs) => Some(cons(x(), xs()), xs())
+      case l @ Cons(x, xs) => Option(l, xs())
       case Empty => None
-    }.append(cons(empty, empty))
+    }.append(LazyList(empty))
 
-  def scanRight[B](s: B)(f: (A,B) => B): LazyList[B] =
+  def scanRight[B](s: => B)(f: (A, => B) => B): LazyList[B] =
 //    unfold(this) {
 //      case Empty => None
 //      case xs => Some(xs.foldRight(s)(f(_,_)), xs.drop(1))
